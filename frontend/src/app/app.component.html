@@ -1,0 +1,102 @@
+<div style="display: flex; height: 100vh; background: #090d16; color: #f1f5f9;">
+  <!-- Left Sidebar: Vector Knowledge Vault & Ingestion -->
+  <aside style="width: 380px; border-right: 1px solid #1e293b; padding: 1.25rem; overflow-y: auto; background: #0f172a;">
+    <h2 style="margin-top: 0; color: #38bdf8;">🧠 VaultMind AI</h2>
+    <p style="font-size: 0.82rem; color: #94a3b8;">AES-256 Encrypted RAG & Vector Vault</p>
+
+    <!-- Ingest Panel -->
+    <div style="background: #1e293b; padding: 1rem; border-radius: 8px; margin-bottom: 1.25rem;">
+      <h4 style="margin-top: 0;">+ Ingest Note / Email / PDF</h4>
+      <input [(ngModel)]="newDoc.title" placeholder="Title (e.g. Lecture_Notes.md)"
+             style="width: 100%; padding: 0.5rem; margin-bottom: 0.5rem; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: white;" />
+      <select [(ngModel)]="newDoc.docType"
+              style="width: 100%; padding: 0.5rem; margin-bottom: 0.5rem; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: white;">
+        <option value="NOTE">Personal Note (.md / .txt)</option>
+        <option value="EMAIL">Email (.eml)</option>
+        <option value="DOCUMENT">Study Material</option>
+      </select>
+      <textarea [(ngModel)]="newDoc.content" rows="4" placeholder="Paste personal notes or email content (PII is auto-scrubbed)..."
+                style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: white;"></textarea>
+      <button (click)="ingestDocument()"
+              style="width: 100%; margin-top: 0.5rem; padding: 0.6rem; background: #0284c7; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
+        Chunk, Encrypt & Embed
+      </button>
+
+      <div style="margin-top: 0.75rem; font-size: 0.8rem; color: #94a3b8;">
+        Or upload PDF / .eml file:
+        <input type="file" (change)="onFileSelected($event)" style="margin-top: 0.35rem; width: 100%;" />
+      </div>
+    </div>
+
+    <!-- Indexed Documents -->
+    <h4>Indexed Vector Documents ({{ documents.length }})</h4>
+    <div *ngFor="let doc of documents"
+         style="background: #1e293b; padding: 0.75rem; border-radius: 8px; margin-bottom: 0.6rem; border-left: 3px solid #38bdf8;">
+      <div style="font-weight: 600; font-size: 0.92rem;">{{ doc.title }}</div>
+      <div style="font-size: 0.78rem; color: #94a3b8; display: flex; justify-content: space-between; margin-top: 6px;">
+        <span>Type: {{ doc.docType }}</span>
+        <span>Chunks: {{ doc.totalChunks }}</span>
+        <span style="color: #4ade80;">PII Redacted: {{ doc.redactedPiiCount }}</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Right Main Area: Conversational RAG Interface -->
+  <main style="flex: 1; display: flex; flex-direction: column; height: 100vh;">
+    <!-- Privacy & LLM Bar -->
+    <header style="padding: 1rem 1.5rem; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center; background: #0f172a;">
+      <div>
+        <strong>Conversational Knowledge Base</strong>
+        <span style="margin-left: 12px; font-size: 0.8rem; background: #065f46; color: #6ee7b7; padding: 3px 10px; border-radius: 99px;">
+          🔒 AES-256 + PII Guard Active
+        </span>
+      </div>
+      <div style="display: flex; gap: 1rem; align-items: center;">
+        <label style="font-size: 0.85rem;">
+          <input type="checkbox" [(ngModel)]="scrubPii" /> Scrub PII on Query
+        </label>
+        <select [(ngModel)]="provider"
+                style="padding: 0.4rem 0.75rem; border-radius: 6px; background: #1e293b; color: white; border: 1px solid #334155;">
+          <option value="GEMINI">Cloud: Google Gemini 2.5</option>
+          <option value="OLLAMA">Local Offline: Ollama (Llama 3)</option>
+        </select>
+      </div>
+    </header>
+
+    <!-- Chat History -->
+    <section style="flex: 1; padding: 1.5rem; overflow-y: auto;">
+      <div *ngFor="let msg of messages"
+           [style.background]="msg.role === 'user' ? '#1e293b' : '#0f172a'"
+           style="padding: 1rem 1.25rem; border-radius: 10px; margin-bottom: 1rem; border: 1px solid #1e293b;">
+        <div style="font-size: 0.78rem; color: #38bdf8; margin-bottom: 0.35rem; font-weight: 600;">
+          {{ msg.role === 'user' ? 'You' : 'VaultMind AI (' + (msg.provider || 'RAG Engine') + ')' }}
+        </div>
+        <div style="white-space: pre-wrap; line-height: 1.55;">{{ msg.text }}</div>
+
+        <!-- Inline Citations -->
+        <div *ngIf="msg.citations && msg.citations.length > 0" style="margin-top: 1rem; border-top: 1px solid #1e293b; padding-top: 0.75rem;">
+          <div style="font-size: 0.8rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.5rem;">
+            📌 Retrieved Vector Citations (Cosine Similarity):
+          </div>
+          <div *ngFor="let c of msg.citations"
+               style="background: #020617; padding: 0.65rem; border-radius: 6px; margin-bottom: 0.4rem; font-size: 0.82rem; border-left: 3px solid #a855f7;">
+            <strong>[{{ c.documentTitle }} — Chunk #{{ c.chunkIndex }}]</strong>
+            <span style="float: right; color: #4ade80;">Similarity: {{ c.similarityScore }}</span>
+            <p style="margin: 0.35rem 0 0 0; color: #cbd5e1;">"{{ c.snippet }}"</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Chat Input Box -->
+    <footer style="padding: 1rem 1.5rem; border-top: 1px solid #1e293b; display: flex; gap: 0.75rem; background: #0f172a;">
+      <input [(ngModel)]="question" (keyup.enter)="askQuestion()"
+             placeholder="Ask anything across your PDFs, emails, and study notes..."
+             style="flex: 1; padding: 0.85rem; border-radius: 8px; border: 1px solid #334155; background: #020617; color: white;" />
+      <button (click)="askQuestion()" [disabled]="isLoading"
+              style="padding: 0 1.5rem; background: #0284c7; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+        {{ isLoading ? 'Searching Vectors...' : 'Ask VaultMind' }}
+      </button>
+    </footer>
+  </main>
+</div>
