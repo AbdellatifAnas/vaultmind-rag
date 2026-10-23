@@ -1,0 +1,21 @@
+# Java / Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+*.class
+*.jar
+*.war
+
+# Angular / Node
+node_modules/
+dist/
+.angular/
+
+# IDEs & OS
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Secrets
+.env
+application-local.yml

@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  pgvector-db:
+    image: pgvector/pgvector:pg16
+    container_name: vaultmind-pgvector
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: rootpassword
+      POSTGRES_DB: vaultmind_rag
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgvector_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    container_name: vaultmind-backend
+    ports:
+      - "8081:8081"
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      ENCRYPTION_SECRET: ${ENCRYPTION_SECRET:-MySuperSecretAESKey123456789012}
+    depends_on:
+      - pgvector-db
+
+volumes:
+  pgvector_data:
